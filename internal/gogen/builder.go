@@ -449,6 +449,7 @@ func (bb *builder) addQueryMethod(gen *GeneratedFile, req *builtRequest) error {
 
 		case *schema_j5pb.Field_String_,
 			*schema_j5pb.Field_Key,
+			*schema_j5pb.Field_Integer,
 			*schema_j5pb.Field_Timestamp:
 			accessor := "s." + field.Name
 			if !field.Property.Required {
