@@ -447,26 +447,34 @@ func (bb *builder) addQueryMethod(gen *GeneratedFile, req *builtRequest) error {
 			accessor = queryMethod.ImportPath("fmt") + ".Sprintf(\"%v\", " + accessor + ")"
 			queryMethod.P("  values.Set(\"", field.Property.Name, "\", ", accessor, ")")
 
-		case *schema_j5pb.Field_String_,
-			*schema_j5pb.Field_Key,
-			*schema_j5pb.Field_Integer,
-			*schema_j5pb.Field_Timestamp:
-			accessor := "s." + field.Name
-			if !field.Property.Required {
-				accessor = "*s." + field.Name
-			}
-
-			switch fieldType.(type) {
-			case *schema_j5pb.Field_Timestamp:
-				accessor = accessor + ".String()"
-
-			}
-
+		case *schema_j5pb.Field_Timestamp:
+			accessor := "s." + field.Name + ".Format(time.RFC3339)"
 			if field.Property.Required {
 				queryMethod.P("  values.Set(\"", field.Property.Name, "\", ", accessor, ")")
 			} else {
 				queryMethod.P("  if s.", field.Name, " != nil {")
 				queryMethod.P("    values.Set(\"", field.Property.Name, "\", ", accessor, ")")
+				queryMethod.P("  }")
+			}
+
+		case *schema_j5pb.Field_Integer:
+			if !field.Property.Required {
+				queryMethod.P("  values.Set(\"", field.Property.Name, "\", ",
+					queryMethod.ImportPath("fmt")+".Sprintf(\"%d\", s.", field.Name, "))")
+			} else {
+				queryMethod.P("  if s.", field.Name, " != nil {")
+				queryMethod.P("  values.Set(\"", field.Property.Name, "\", ",
+					queryMethod.ImportPath("fmt")+".Sprintf(\"%d\", *s.", field.Name, "))")
+				queryMethod.P("  }")
+			}
+
+		case *schema_j5pb.Field_String_,
+			*schema_j5pb.Field_Key:
+			if field.Property.Required {
+				queryMethod.P("  values.Set(\"", field.Property.Name, "\", s.", field.Name, ")")
+			} else {
+				queryMethod.P("  if s.", field.Name, " != nil {")
+				queryMethod.P("    values.Set(\"", field.Property.Name, "\", *s.", field.Name, ")")
 				queryMethod.P("  }")
 			}
 
