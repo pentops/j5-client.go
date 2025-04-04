@@ -6,6 +6,7 @@ import (
 	"go/format"
 	"log"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/pentops/j5/gen/j5/schema/v1/schema_j5pb"
@@ -124,7 +125,14 @@ func (gen *GeneratedFile) addCombinedClient() {
 	}
 
 	constructor.P("  return &CombinedClient{")
+	list := make([]string, 0, len(gen._services))
+
 	for _, service := range gen._services {
+		list = append(list, service.Name)
+	}
+	sort.Strings(list)
+	for _, serviceName := range list {
+		service := gen._services[serviceName]
 		combined.Fields = append(combined.Fields, &Field{
 			//Name:     service.Name,
 			DataType: DataType{Name: service.Name, Pointer: true},
@@ -384,6 +392,8 @@ func tagString(tags map[string]string) string {
 	for tagName, tagValue := range tags {
 		tagStrings = append(tagStrings, fmt.Sprintf("%s:\"%s\"", tagName, tagValue))
 	}
+	// in order for consistent code gen
+	sort.Strings(tagStrings)
 	tagString := strings.Join(tagStrings, " ")
 	return "`" + tagString + "`"
 }

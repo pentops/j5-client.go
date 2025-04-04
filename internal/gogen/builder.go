@@ -3,6 +3,7 @@ package gogen
 import (
 	"fmt"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/pentops/j5/gen/j5/client/v1/client_j5pb"
@@ -28,19 +29,32 @@ func (bb *builder) fileForPackage(grpcPackageName string) (*GeneratedFile, error
 
 func (bb *builder) addPackage(j5Package *client_j5pb.Package) error {
 
+	sort.Slice(j5Package.Services, func(i, j int) bool {
+		return j5Package.Services[i].Name < j5Package.Services[j].Name
+	})
+
 	for _, service := range j5Package.Services {
 		if err := bb.addService(j5Package, service); err != nil {
 			return patherr.Wrap(err, "service", service.Name)
-
 		}
 	}
+
+	sort.Slice(j5Package.StateEntities, func(i, j int) bool {
+		return j5Package.StateEntities[i].Name < j5Package.StateEntities[j].Name
+	})
+
 	for _, entity := range j5Package.StateEntities {
 		if err := bb.addEntity(j5Package, entity); err != nil {
 			return patherr.Wrap(err, "entity", entity.Name)
 		}
 	}
 
-	for name, schema := range j5Package.Schemas {
+	schemas := pairsFromMap(j5Package.Schemas)
+	sort.Sort(schemas)
+
+	for _, pair := range schemas {
+		schema := pair.schema
+		name := pair.name
 		switch schemaType := schema.Type.(type) {
 		case *schema_j5pb.RootSchema_Enum:
 			if err := bb.addEnum(j5Package.Name, schemaType.Enum); err != nil {
