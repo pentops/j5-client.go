@@ -233,7 +233,11 @@ func (bb *builder) addMethod(packageName string, serviceName string, operation *
 			requestMethod.P("  }")
 		}
 		requestMethod.P("  resp := &", responseType, "{}")
-		requestMethod.P("  err := s.Request(ctx, \"", operation.HttpMethod.ShortString(), "\", path, req, resp)")
+		if methodCanHaveBody(operation.HttpMethod) {
+			requestMethod.P("  err := s.Request(ctx, \"", operation.HttpMethod.ShortString(), "\", path, req, resp)")
+		} else {
+			requestMethod.P("  err := s.Request(ctx, \"", operation.HttpMethod.ShortString(), "\", path, nil, resp)")
+		}
 		requestMethod.P("  if err != nil {")
 		requestMethod.P("    return nil, err")
 		requestMethod.P("  }")
@@ -308,6 +312,14 @@ func (bb *builder) addMethod(packageName string, serviceName string, operation *
 
 	return nil
 
+}
+
+func methodCanHaveBody(method client_j5pb.HTTPMethod) bool {
+	switch method {
+	case client_j5pb.HTTPMethod_POST, client_j5pb.HTTPMethod_PUT, client_j5pb.HTTPMethod_PATCH:
+		return true
+	}
+	return false
 }
 
 type builtRequest struct {
