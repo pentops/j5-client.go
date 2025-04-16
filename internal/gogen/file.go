@@ -330,7 +330,7 @@ func (f *Function) Print(gen *StringGen) {
 		"func ",
 	}, parts...)...)
 
-	f.StringGen.buf.WriteTo(gen.buf) // nolint: errcheck //  as all writes to a bytes.Buffer succeed
+	f.buf.WriteTo(gen.buf) // nolint: errcheck //  as all writes to a bytes.Buffer succeed
 
 	gen.P("}")
 	gen.P()
@@ -347,7 +347,7 @@ func (f *Function) PrintAsMethod(gen *StringGen, methodOf string) {
 		"func (s ", methodOf, ") ",
 	}, parts...)...)
 
-	f.StringGen.buf.WriteTo(gen.buf) // nolint: errcheck //  as all writes to a bytes.Buffer succeed
+	f.buf.WriteTo(gen.buf) // nolint: errcheck //  as all writes to a bytes.Buffer succeed
 
 	gen.P("}")
 	gen.P()

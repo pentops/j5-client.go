@@ -4,7 +4,6 @@ go 1.24.1
 
 require (
 	github.com/pentops/j5 v0.0.0-20250326000307-24e2adf77e8e
-	github.com/pentops/j5build v0.0.0-20250326003532-4b075335184f
 	github.com/stretchr/testify v1.10.0
 	google.golang.org/protobuf v1.36.6
 )

@@ -557,7 +557,7 @@ func (bb *builder) buildTypeName(currentPackage string, schema *schema_j5pb.Fiel
 				return nil, fmt.Errorf("referencedType %q.%q: %w", refPackage, refSchema, err)
 			}
 		default:
-			return nil, fmt.Errorf("Unknown object ref type: %T\n", schema)
+			return nil, fmt.Errorf("unknown object ref type: %T", schema)
 		}
 
 		objectPackage, err := bb.options.ReferenceGoPackage(refPackage)
@@ -588,7 +588,7 @@ func (bb *builder) buildTypeName(currentPackage string, schema *schema_j5pb.Fiel
 				return nil, fmt.Errorf("referencedType %q.%q: %w", refPackage, refSchema, err)
 			}
 		default:
-			return nil, fmt.Errorf("Unknown object ref type: %T\n", schema)
+			return nil, fmt.Errorf("unknown object ref type: %T", schema)
 		}
 
 		objectPackage, err := bb.options.ReferenceGoPackage(refPackage)
@@ -619,7 +619,7 @@ func (bb *builder) buildTypeName(currentPackage string, schema *schema_j5pb.Fiel
 				return nil, fmt.Errorf("referencedType %q.%q: %w", refPackage, refSchema, err)
 			}
 		default:
-			return nil, fmt.Errorf("Unknown enum ref type: %T\n", schema)
+			return nil, fmt.Errorf("unknown enum ref type: %T", schema)
 		}
 
 		enumPackage, err := bb.options.ReferenceGoPackage(refPackage)
@@ -694,7 +694,7 @@ func (bb *builder) buildTypeName(currentPackage string, schema *schema_j5pb.Fiel
 				Pointer: false,
 			}, nil
 		default:
-			return nil, fmt.Errorf("Unknown string format: %s", *item.Format)
+			return nil, fmt.Errorf("unknown string format: %s", *item.Format)
 		}
 
 	case *schema_j5pb.Field_Bytes:
@@ -748,7 +748,7 @@ func (bb *builder) buildTypeName(currentPackage string, schema *schema_j5pb.Fiel
 		}, nil
 
 	default:
-		return nil, fmt.Errorf("Unknown type for Go Gen: %T\n", schemaType)
+		return nil, fmt.Errorf("unknown type for Go Gen: %T", schemaType)
 	}
 
 }
