@@ -483,6 +483,16 @@ func (bb *builder) addQueryMethod(gen *GeneratedFile, req *builtRequest) error {
 				queryMethod.P("  }")
 			}
 
+		case *schema_j5pb.Field_Date:
+			accessor := "s." + field.Name + ".DateString()"
+			if field.Property.Required {
+				queryMethod.P("  values.Set(\"", field.Property.Name, "\", ", accessor, ")")
+			} else {
+				queryMethod.P("  if s.", field.Name, " != nil {")
+				queryMethod.P("    values.Set(\"", field.Property.Name, "\", ", accessor, ")")
+				queryMethod.P("  }")
+			}
+
 		case *schema_j5pb.Field_Integer:
 			if !field.Property.Required {
 				queryMethod.P("  values.Set(\"", field.Property.Name, "\", ",
@@ -705,8 +715,9 @@ func (bb *builder) buildTypeName(currentPackage string, schema *schema_j5pb.Fiel
 
 	case *schema_j5pb.Field_Date:
 		return &DataType{
-			Name:    "string",
-			Pointer: false,
+			Name:      "Date",
+			Pointer:   true,
+			GoPackage: "github.com/pentops/j5-client.go/lib/j5date",
 		}, nil
 
 	case *schema_j5pb.Field_Timestamp:
@@ -718,8 +729,9 @@ func (bb *builder) buildTypeName(currentPackage string, schema *schema_j5pb.Fiel
 
 	case *schema_j5pb.Field_Decimal:
 		return &DataType{
-			Name:    "string",
-			Pointer: false,
+			Name:      "Decimal",
+			Pointer:   false,
+			GoPackage: "github.com/shopspring/decimal",
 		}, nil
 
 	case *schema_j5pb.Field_Key:
