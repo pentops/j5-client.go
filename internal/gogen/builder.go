@@ -619,6 +619,36 @@ func (bb *builder) buildTypeName(currentPackage string, schema *schema_j5pb.Fiel
 			J5Package: refPackage,
 		}, nil
 
+	case *schema_j5pb.Field_Polymorph:
+		var refPackage, refSchema string
+
+		switch linkType := schemaType.Polymorph.Schema.(type) {
+		case *schema_j5pb.PolymorphField_Ref:
+			refPackage = linkType.Ref.Package
+			refSchema = linkType.Ref.Schema
+		case *schema_j5pb.PolymorphField_Polymorph:
+			refPackage = currentPackage
+			refSchema = linkType.Polymorph.Name
+
+			if err := bb.addPolymorph(currentPackage, linkType.Polymorph); err != nil {
+				return nil, fmt.Errorf("referencedType %q.%q: %w", refPackage, refSchema, err)
+			}
+		default:
+			return nil, fmt.Errorf("unknown object ref type: %T", schema)
+		}
+
+		polyPackage, err := bb.options.ReferenceGoPackage(refPackage)
+		if err != nil {
+			return nil, fmt.Errorf("referredType in %q.%q: %w", refPackage, refSchema, err)
+		}
+
+		return &DataType{
+			Name:      goTypeName(refSchema),
+			GoPackage: polyPackage,
+			J5Package: refPackage,
+			Pointer:   true,
+		}, nil
+
 	case *schema_j5pb.Field_Enum:
 		var refPackage, refSchema string
 
