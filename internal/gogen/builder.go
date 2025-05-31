@@ -985,3 +985,40 @@ func (bb *builder) addOneofWrapper(packageName string, wrapper *schema_j5pb.Oneo
 
 	return nil
 }
+
+func (bb *builder) addPolymorph(packageName string, poly *schema_j5pb.Polymorph) error {
+	gen, err := bb.fileForPackage(packageName)
+	if err != nil {
+		return err
+	}
+	if gen == nil {
+		return nil
+	}
+
+	comment := fmt.Sprintf(
+		"Polymorph: %s.%s", packageName, poly.Name,
+	)
+
+	structType := &Struct{
+		Name:    goTypeName(poly.Name),
+		Comment: comment,
+		Fields: []*Field{
+			{
+				Name:     "J5TypeKey",
+				DataType: DataType{Name: "string", Pointer: false},
+				Tags:     map[string]string{"json": "!type,omitempty"},
+			},
+			{
+				Name:     "Value",
+				DataType: DataType{Name: "interface{}", Pointer: false},
+				Tags:     map[string]string{"json": "value,omitempty"},
+			},
+		},
+	}
+
+	if err := gen.AddStruct(structType); err != nil {
+		return err
+	}
+
+	return nil
+}
