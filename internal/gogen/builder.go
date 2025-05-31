@@ -70,6 +70,12 @@ func (bb *builder) addPackage(j5Package *client_j5pb.Package) error {
 			if err := bb.addOneofWrapper(j5Package.Name, schemaType.Oneof); err != nil {
 				return patherr.Wrap(err, "schemas", name)
 			}
+
+		case *schema_j5pb.RootSchema_Polymorph:
+			if err := bb.addPolymorph(j5Package.Name, schemaType.Polymorph); err != nil {
+				return patherr.Wrap(err, "schemas", name)
+			}
+
 		default:
 			return fmt.Errorf("unknown schema type %T", schemaType)
 
@@ -613,6 +619,36 @@ func (bb *builder) buildTypeName(currentPackage string, schema *schema_j5pb.Fiel
 			J5Package: refPackage,
 		}, nil
 
+	case *schema_j5pb.Field_Polymorph:
+		var refPackage, refSchema string
+
+		switch linkType := schemaType.Polymorph.Schema.(type) {
+		case *schema_j5pb.PolymorphField_Ref:
+			refPackage = linkType.Ref.Package
+			refSchema = linkType.Ref.Schema
+		case *schema_j5pb.PolymorphField_Polymorph:
+			refPackage = currentPackage
+			refSchema = linkType.Polymorph.Name
+
+			if err := bb.addPolymorph(currentPackage, linkType.Polymorph); err != nil {
+				return nil, fmt.Errorf("referencedType %q.%q: %w", refPackage, refSchema, err)
+			}
+		default:
+			return nil, fmt.Errorf("unknown object ref type: %T", schema)
+		}
+
+		polyPackage, err := bb.options.ReferenceGoPackage(refPackage)
+		if err != nil {
+			return nil, fmt.Errorf("referredType in %q.%q: %w", refPackage, refSchema, err)
+		}
+
+		return &DataType{
+			Name:      goTypeName(refSchema),
+			GoPackage: polyPackage,
+			J5Package: refPackage,
+			Pointer:   true,
+		}, nil
+
 	case *schema_j5pb.Field_Enum:
 		var refPackage, refSchema string
 
@@ -946,6 +982,43 @@ func (bb *builder) addOneofWrapper(packageName string, wrapper *schema_j5pb.Oneo
 	valueMethod.P("return nil")
 
 	structType.Methods = append(structType.Methods, keyMethod, valueMethod)
+
+	return nil
+}
+
+func (bb *builder) addPolymorph(packageName string, poly *schema_j5pb.Polymorph) error {
+	gen, err := bb.fileForPackage(packageName)
+	if err != nil {
+		return err
+	}
+	if gen == nil {
+		return nil
+	}
+
+	comment := fmt.Sprintf(
+		"Polymorph: %s.%s", packageName, poly.Name,
+	)
+
+	structType := &Struct{
+		Name:    goTypeName(poly.Name),
+		Comment: comment,
+		Fields: []*Field{
+			{
+				Name:     "J5TypeKey",
+				DataType: DataType{Name: "string", Pointer: false},
+				Tags:     map[string]string{"json": "!type,omitempty"},
+			},
+			{
+				Name:     "Value",
+				DataType: DataType{Name: "interface{}", Pointer: false},
+				Tags:     map[string]string{"json": "value,omitempty"},
+			},
+		},
+	}
+
+	if err := gen.AddStruct(structType); err != nil {
+		return err
+	}
 
 	return nil
 }
