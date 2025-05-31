@@ -70,6 +70,12 @@ func (bb *builder) addPackage(j5Package *client_j5pb.Package) error {
 			if err := bb.addOneofWrapper(j5Package.Name, schemaType.Oneof); err != nil {
 				return patherr.Wrap(err, "schemas", name)
 			}
+
+		case *schema_j5pb.RootSchema_Polymorph:
+			if err := bb.addPolymorph(j5Package.Name, schemaType.Polymorph); err != nil {
+				return patherr.Wrap(err, "schemas", name)
+			}
+
 		default:
 			return fmt.Errorf("unknown schema type %T", schemaType)
 
