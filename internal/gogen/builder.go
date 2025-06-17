@@ -207,24 +207,31 @@ func (bb *builder) addMethod(packageName string, serviceName string, operation *
 			}
 
 			switch fieldType := param.Field.Property.Schema.Type.(type) {
-			case *schema_j5pb.Field_String_, *schema_j5pb.Field_Key, *schema_j5pb.Field_Date:
+			case *schema_j5pb.Field_String_, *schema_j5pb.Field_Key:
 
+				if param.Field.DataType.Pointer {
+					requestMethod.P("  if req.", param.Field.Name, " == nil || *req.", param.Field.Name, " == \"\" {")
+					requestMethod.P("    return nil, ", requestMethod.ImportPath("errors"), ".New(", quoteString(fmt.Sprintf("required field %q not set", param.Field.Name)), ")")
+					requestMethod.P("  }")
+					requestMethod.P("  pathParts[", idx, "] = *req.", param.Field.Name)
+				} else {
+					requestMethod.P("  if req.", param.Field.Name, " == \"\" {")
+					requestMethod.P("    return nil, ", requestMethod.ImportPath("errors"), ".New(", quoteString(fmt.Sprintf("required field %q not set", param.Field.Name)), ")")
+					requestMethod.P("  }")
+					requestMethod.P("  pathParts[", idx, "] = req.", param.Field.Name)
+				}
+
+			case *schema_j5pb.Field_Date:
+
+				requestMethod.P("  if req.", param.Field.Name, " == nil {")
+				requestMethod.P("    return nil, ", requestMethod.ImportPath("errors"), ".New(", quoteString(fmt.Sprintf("required field %q not set", param.Field.Name)), ")")
+				requestMethod.P("  }")
+				requestMethod.P("  pathParts[", idx, "] = req.", param.Field.Name, ".DateString()")
 			default:
 				// Only string-like is supported for now
 				return fmt.Errorf("unsupported path parameter type %T", fieldType)
 			}
 
-			if param.Field.DataType.Pointer {
-				requestMethod.P("  if req.", param.Field.Name, " == nil || *req.", param.Field.Name, " == \"\" {")
-				requestMethod.P("    return nil, ", requestMethod.ImportPath("errors"), ".New(", quoteString(fmt.Sprintf("required field %q not set", param.Field.Name)), ")")
-				requestMethod.P("  }")
-				requestMethod.P("  pathParts[", idx, "] = *req.", param.Field.Name)
-			} else {
-				requestMethod.P("  if req.", param.Field.Name, " == \"\" {")
-				requestMethod.P("    return nil, ", requestMethod.ImportPath("errors"), ".New(", quoteString(fmt.Sprintf("required field %q not set", param.Field.Name)), ")")
-				requestMethod.P("  }")
-				requestMethod.P("  pathParts[", idx, "] = req.", param.Field.Name)
-			}
 		}
 		requestMethod.P("  path := ", requestMethod.ImportPath("strings"), ".Join(pathParts, \"/\")")
 
