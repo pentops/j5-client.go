@@ -3,7 +3,7 @@ module github.com/pentops/j5-client.go
 go 1.24.1
 
 require (
-	github.com/pentops/j5 v0.0.0-20250605002250-2add77d73a52
+	github.com/pentops/j5 v0.0.0-20250710011159-41f6bc5b65be
 	github.com/stretchr/testify v1.10.0
 	google.golang.org/protobuf v1.36.6
 )
