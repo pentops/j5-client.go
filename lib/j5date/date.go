@@ -14,11 +14,19 @@ type Date struct {
 }
 
 func NewDate(year, month, day int32) *Date {
-	return &Date{
+	dd := &Date{
 		Year:  year,
 		Month: month,
 		Day:   day,
 	}
+
+	if dd.Day < 0 {
+		// If the day is negative, we set it to 1 then adjust,
+		// allowing 2025, 2, -1 to become 2025-02-01.
+		dd.Day = 1
+		dd = dd.AddDate(0, 0, day)
+	}
+	return dd
 }
 
 // AsTime returns a time.Time object with the date set to the Date value at
