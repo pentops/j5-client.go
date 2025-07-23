@@ -115,7 +115,7 @@ func (bb *builder) addService(j5Package *client_j5pb.Package, service *client_j5
 
 func (bb *builder) addMethod(packageName string, serviceName string, operation *client_j5pb.Method) error {
 
-	if operation.Request == nil || operation.Request.Body == nil {
+	if operation.Request == nil {
 		// TODO: Include HTTP body methods
 		return nil
 	}
