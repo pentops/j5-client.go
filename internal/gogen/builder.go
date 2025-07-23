@@ -106,7 +106,7 @@ func (bb *builder) addService(j5Package *client_j5pb.Package, service *client_j5
 
 	for _, method := range service.Methods {
 		if err := bb.addMethod(j5Package.Name, service.Name, method); err != nil {
-			return patherr.Wrap(err, method.Name)
+			return patherr.Wrap(err, method.Method.Name)
 		}
 	}
 
@@ -115,7 +115,7 @@ func (bb *builder) addService(j5Package *client_j5pb.Package, service *client_j5
 
 func (bb *builder) addMethod(packageName string, serviceName string, operation *client_j5pb.Method) error {
 
-	if operation.Request == nil {
+	if operation.Request == nil || operation.Request.Body == nil {
 		// TODO: Include HTTP body methods
 		return nil
 	}
@@ -158,7 +158,7 @@ func (bb *builder) addMethod(packageName string, serviceName string, operation *
 
 	service := gen.Service(serviceName)
 
-	responseType := fmt.Sprintf("%sResponse", operation.Name)
+	responseType := fmt.Sprintf("%sResponse", operation.Method.Name)
 
 	req, err := bb.prepareRequestObject(packageName, operation)
 	if err != nil {
@@ -167,7 +167,7 @@ func (bb *builder) addMethod(packageName string, serviceName string, operation *
 	{
 
 		if err := gen.AddStruct(req.Request); err != nil {
-			return err
+			return fmt.Errorf("add request struct: %w", err)
 		}
 
 		if req.pageRequestField != nil {
@@ -177,7 +177,7 @@ func (bb *builder) addMethod(packageName string, serviceName string, operation *
 		}
 
 		requestMethod := &Function{
-			Name: operation.Name,
+			Name: operation.Method.Name,
 			Parameters: []*Parameter{{
 				Name: "ctx",
 				DataType: DataType{
@@ -240,7 +240,7 @@ func (bb *builder) addMethod(packageName string, serviceName string, operation *
 		}
 		requestMethod.P("  path := ", requestMethod.ImportPath("strings"), ".Join(pathParts, \"/\")")
 
-		if operation.HttpMethod == client_j5pb.HTTPMethod_GET {
+		if operation.Method.HttpMethod == schema_j5pb.HTTPMethod_GET {
 			if err := bb.addQueryMethod(gen, req); err != nil {
 				return err
 			}
@@ -251,10 +251,10 @@ func (bb *builder) addMethod(packageName string, serviceName string, operation *
 			requestMethod.P("  }")
 		}
 		requestMethod.P("  resp := &", responseType, "{}")
-		if methodCanHaveBody(operation.HttpMethod) {
-			requestMethod.P("  err := s.Request(ctx, \"", operation.HttpMethod.ShortString(), "\", path, req, resp)")
+		if methodCanHaveBody(operation.Method.HttpMethod) {
+			requestMethod.P("  err := s.Request(ctx, \"", operation.Method.HttpMethod.ShortString(), "\", path, req, resp)")
 		} else {
-			requestMethod.P("  err := s.Request(ctx, \"", operation.HttpMethod.ShortString(), "\", path, nil, resp)")
+			requestMethod.P("  err := s.Request(ctx, \"", operation.Method.HttpMethod.ShortString(), "\", path, nil, resp)")
 		}
 		requestMethod.P("  if err != nil {")
 		requestMethod.P("    return nil, err")
@@ -284,7 +284,7 @@ func (bb *builder) addMethod(packageName string, serviceName string, operation *
 			for _, property := range responseSchema.Properties {
 				field, err := bb.jsonField(packageName, property)
 				if err != nil {
-					return fmt.Errorf("%s.ResponseBody: %w", operation.Name, err)
+					return fmt.Errorf("%s.ResponseBody: %w", operation.Method.Name, err)
 				}
 				responseStruct.Fields = append(responseStruct.Fields, field)
 				if field.DataType.J5Package == J5ListPackage && field.DataType.Name == J5PageResponse {
@@ -332,9 +332,9 @@ func (bb *builder) addMethod(packageName string, serviceName string, operation *
 
 }
 
-func methodCanHaveBody(method client_j5pb.HTTPMethod) bool {
+func methodCanHaveBody(method schema_j5pb.HTTPMethod) bool {
 	switch method {
-	case client_j5pb.HTTPMethod_POST, client_j5pb.HTTPMethod_PUT, client_j5pb.HTTPMethod_PATCH:
+	case schema_j5pb.HTTPMethod_POST, schema_j5pb.HTTPMethod_PUT, schema_j5pb.HTTPMethod_PATCH:
 		return true
 	}
 	return false
@@ -358,7 +358,7 @@ const (
 )
 
 func (bb *builder) prepareRequestObject(currentPackage string, operation *client_j5pb.Method) (*builtRequest, error) {
-	requestType := fmt.Sprintf("%sRequest", operation.Name)
+	requestType := fmt.Sprintf("%sRequest", operation.Method.Name)
 
 	requestStruct := &Struct{
 		Name: requestType,
@@ -408,7 +408,7 @@ func (bb *builder) prepareRequestObject(currentPackage string, operation *client
 		}
 	}
 
-	pathParts := strings.Split(operation.HttpPath, "/")
+	pathParts := strings.Split(operation.Method.HttpPath, "/")
 	req.path = make([]PathPart, len(pathParts))
 	for idx, part := range pathParts {
 		part := part

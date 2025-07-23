@@ -36,10 +36,12 @@ func TestTestProtoGen(t *testing.T) {
 			Services: []*client_j5pb.Service{{
 				Name: "TestService",
 				Methods: []*client_j5pb.Method{{
-					Name:         "PostFoo",
-					FullGrpcName: "test.v1.TestService/PostFoo",
-					HttpMethod:   client_j5pb.HTTPMethod_GET,
-					HttpPath:     "/test/v1/foo/:foo_id",
+					Method: &schema_j5pb.Method{
+						Name:         "PostFoo",
+						FullGrpcName: "test.v1.TestService/PostFoo",
+						HttpMethod:   schema_j5pb.HTTPMethod_GET,
+						HttpPath:     "/test/v1/foo/:foo_id",
+					},
 					Request: &client_j5pb.Method_Request{
 						PathParameters: []*schema_j5pb.ObjectProperty{{
 							Name:     "foo_id",
